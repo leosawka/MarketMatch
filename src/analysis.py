@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 import os
 
+csv_path = "data/products.csv"
 API_URL = "https://fakestoreapi.com/products"
 def load_data(csv_path):
     return pd.read_csv(csv_path)
