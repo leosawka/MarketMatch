@@ -19,7 +19,7 @@ def compare_prices(products, external_data):
     external_df = pd.DataFrame(external_data)[["title", "price"]]
     external_df.rename(columns={"title": "product_name", "price": "market_price"}, inplace=True)
 
-    merged_df = product_data.merge(external_def, on="product_name", how="left")
+    merged_df = products.merge(external_df, on="product_name", how="left")
 
     merged_df["price_difference"] = merged_df["our_price"] - merged_df["market_price"]
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     API_URL = "https://api.escuelajs.co/api/v1/products"
     api_key = os.getenv('API_KEY')
-    external_data = get_external_data(API_URL, api_key)
+    external_data = get_external_data()
 
 comparison = compare_prices(products, external_data)
 
