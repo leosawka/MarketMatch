@@ -45,7 +45,7 @@ if __name__ == "__main__":
     if products is not None:
         external_data = get_external_data()
         if "our_price" not in products.columns:
-            raise KeyError("❌ Error: La columna 'our_price' no está presente en el archivo CSV.")
+            raise KeyError("Error: The column 'our_price' is not in the CSV file. Please check.")
         comparison = analyze_price_trends(products, external_data)
         generate_report(comparison)
     else:
