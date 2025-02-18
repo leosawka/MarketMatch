@@ -5,7 +5,11 @@ import os
 csv_path = "data/products.csv"
 API_URL = "https://fakestoreapi.com/products"
 def load_data(csv_path):
-    return pd.read_csv(csv_path)
+    try:
+        return pd.read_csv(csv_path, encoding="utf-8", sep=",", quotechar='"', on_bad_lines='skip')
+    except pd.errors.ParserError as e:
+            print(f"Error loading data: {e}")
+            return None
 
 def get_external_data():
     response = requests.get(API_URL)
@@ -15,29 +19,34 @@ def get_external_data():
     else:
         raise Exception(f"Failed to fetch data. Status code: {response.status_code}")
 
-def compare_prices(products, external_data):
+def analyze_price_trends(products, external_data):
     external_df = pd.DataFrame(external_data)[["title", "price"]]
     external_df.rename(columns={"title": "product_name", "price": "market_price"}, inplace=True)
 
-    merged_df = products.merge(external_df, on="product_name", how="left")
+    avg_market_price = external_df["market_price"].mean()
 
-    merged_df["price_difference"] = merged_df["our_price"] - merged_df["market_price"]
+    products["avg_market_price"] = avg_market_price
+    products["price_difference"] = products["our_price"] - avg_market_price
+    products["pricing_trend"] = products["price_difference"].apply(lambda x: "Increasing" if x > 0 else "Decreasing")
 
-    return merged_df
+    return products
 
 
 def generate_report(data):
-    insights = data[['product_name', 'our_price', 'market_price', 'price_difference']]
-    with open("report.md", "w") as f:
-        f.write(insights.to_markdown(index=False))
+    insights = data[['product_name', 'our_price', 'avg_market_price', 'price_difference', 'pricing_trend']]
+    with open("report.md", "w", encoding="utf-8") as file:
+        file.write("# Product Pricing Insights\n\n")
+        file.write("This report provides insights into the product pricing trends.\n\n")
+        file.write(insights.to_markdown(index=False))
 
 if __name__ == "__main__":
-    products = load_data('data/products.csv')
+    products = load_data(csv_path)
 
-    API_URL = "https://api.escuelajs.co/api/v1/products"
-    api_key = os.getenv('API_KEY')
-    external_data = get_external_data()
-
-comparison = compare_prices(products, external_data)
-
-generate_report(comparison)
+    if products is not None:
+        external_data = get_external_data()
+        if "our_price" not in products.columns:
+            raise KeyError("❌ Error: La columna 'our_price' no está presente en el archivo CSV.")
+        comparison = analyze_price_trends(products, external_data)
+        generate_report(comparison)
+    else:
+        print("Error loading data.")
